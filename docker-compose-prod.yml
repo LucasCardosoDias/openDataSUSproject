@@ -1,0 +1,94 @@
+# add: common_var
+version: '3.0'
+services:
+    redis:
+        image: 'redis:6.2'
+        restart: always
+
+    postgres:
+        image: postgres:11.15-alpine
+        restart: always
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+        ports:
+            - "5432:5432"
+
+    DAG_ManipulatorDB:
+        image: postgres:11.15-alpine
+        restart: always
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_DB=DAG_ManipulatorDB
+        ports:
+            - "5433:5432"
+
+    webserver:
+        image: docker-airflow-prod:1.0.0
+        restart: always
+        depends_on:
+            - postgres
+            - redis
+        environment:
+            - AIRFLOW__CORE__LOAD_EXAMPLES=false
+            - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+        volumes:
+            - ./dags:/opt/airflow/dags
+        ports:
+            - "8080:8080"
+        command: webserver
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "[ -f /opt/airflow/airflow-webserver.pid ]"
+                ]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+        env_file:
+            - common_var.env
+
+    flower:
+        image: docker-airflow-prod:1.0.0
+        restart: always
+        depends_on:
+            - redis
+        environment:
+            - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+        ports:
+            - "5555:5555"
+        command: airflow celery flower
+
+    scheduler:
+        image: docker-airflow-prod:1.0.0
+        restart: always
+        depends_on:
+            - webserver
+        volumes:
+            - ./dags:/opt/airflow/dags
+        environment:
+            - AIRFLOW__CORE__LOAD_EXAMPLES=false
+            - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+        command: airflow scheduler
+        env_file:
+            - common_var.env
+
+    worker:
+        image: docker-airflow-prod:1.0.0
+        restart: always
+        depends_on:
+            - scheduler
+        volumes:
+            - ./dags:/opt/airflow/dags
+        environment:
+            - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+        command: airflow celery worker
+        env_file:
+            - common_var.env
+

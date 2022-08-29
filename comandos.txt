@@ -1,0 +1,4 @@
+Build/Up 
+
+docker build . -f Dockerfile-prod --tag docker-airflow-prod:1.0.0
+docker-compose -f docker-compose-prod.yml up -d
