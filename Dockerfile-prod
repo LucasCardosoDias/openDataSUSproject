@@ -49,7 +49,6 @@ RUN pip install --no-cache -r requirements.txt
 
 COPY config/webserver_config.py $AIRFLOW_HOME/
 COPY dags $AIRFLOW_HOME/dags
-COPY logs_files $AIRFLOW_HOME/
 COPY config/airflow.cfg $AIRFLOW_HOME/
 
 ENTRYPOINT ["/entrypoint.sh"]
