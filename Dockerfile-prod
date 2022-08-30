@@ -1,5 +1,4 @@
 #add: copy script entrypoint
-#docker-airflow-dubom-prod:3.0.0
 #https://hub.docker.com/r/apache/airflow
 FROM apache/airflow:2.2.1-python3.9
 
